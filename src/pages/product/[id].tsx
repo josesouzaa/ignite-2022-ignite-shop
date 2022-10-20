@@ -1,10 +1,12 @@
-import { GetStaticProps } from 'next'
+import { GetStaticPaths, GetStaticProps } from 'next'
 import Image from 'next/image'
 
 import { stripe } from '../../lib/stripe'
 import Stripe from 'stripe'
+import axios from 'axios'
 
 import { styled } from '../../styles'
+import { useState } from 'react'
 
 const Container = styled('main', {
   display: 'grid',
@@ -65,8 +67,13 @@ const ProductDetails = styled('div', {
     fontWeight: 'bold',
     fontSize: '$md',
 
-    '&:hover': {
+    '&:not(disabled):hover': {
       backgroundColor: '$green300'
+    },
+
+    '&:disabled': {
+      opacity: 0.6,
+      cursor: 'not-allowed'
     }
   }
 })
@@ -78,10 +85,32 @@ interface ProductProps {
     imageUrl: string
     price: string
     description: string
+    defaultPriceId: string
   }
 }
 
 export default function Product({ product }: ProductProps) {
+  const [isCreatingCheckoutSession, setIsCreatingCheckoutSession] =
+    useState(false)
+
+  async function handleBuyProduct() {
+    try {
+      setIsCreatingCheckoutSession(true)
+
+      const response = await axios.post('/api/checkout', {
+        priceId: product.defaultPriceId
+      })
+
+      const { checkoutUrl } = response.data
+
+      window.location.href = checkoutUrl
+    } catch (err) {
+      setIsCreatingCheckoutSession(false)
+
+      alert('Falha ao redirecionar ao checkout')
+    }
+  }
+
   return (
     <Container>
       <ImageContainer>
@@ -90,12 +119,24 @@ export default function Product({ product }: ProductProps) {
 
       <ProductDetails>
         <h1>{product.name}</h1>
+
         <span>{product.price}</span>
+
         <p>{product.description}</p>
-        <button>Comprar Agora</button>
+
+        <button disabled={isCreatingCheckoutSession} onClick={handleBuyProduct}>
+          Comprar Agora
+        </button>
       </ProductDetails>
     </Container>
   )
+}
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  return {
+    paths: [],
+    fallback: 'blocking'
+  }
 }
 
 export const getStaticProps: GetStaticProps<any, { id: string }> = async ({
@@ -119,7 +160,8 @@ export const getStaticProps: GetStaticProps<any, { id: string }> = async ({
           style: 'currency',
           currency: 'BRL'
         }).format(price.unit_amount / 100),
-        description: product.description
+        description: product.description,
+        defaultPriceId: price.id
       }
     },
     revalidate: 60 * 60 * 1
