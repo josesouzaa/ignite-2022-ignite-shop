@@ -1,4 +1,5 @@
 import { GetStaticPaths, GetStaticProps } from 'next'
+import Head from 'next/head'
 import Image from 'next/image'
 
 import { stripe } from '../../lib/stripe'
@@ -112,23 +113,32 @@ export default function Product({ product }: ProductProps) {
   }
 
   return (
-    <Container>
-      <ImageContainer>
-        <Image src={product.imageUrl} width={520} height={480} alt="" />
-      </ImageContainer>
+    <>
+      <Head>
+        <title>{product.name} | Ignite Shop</title>
+      </Head>
 
-      <ProductDetails>
-        <h1>{product.name}</h1>
+      <Container>
+        <ImageContainer>
+          <Image src={product.imageUrl} width={520} height={480} alt="" />
+        </ImageContainer>
 
-        <span>{product.price}</span>
+        <ProductDetails>
+          <h1>{product.name}</h1>
 
-        <p>{product.description}</p>
+          <span>{product.price}</span>
 
-        <button disabled={isCreatingCheckoutSession} onClick={handleBuyProduct}>
-          Comprar Agora
-        </button>
-      </ProductDetails>
-    </Container>
+          <p>{product.description}</p>
+
+          <button
+            disabled={isCreatingCheckoutSession}
+            onClick={handleBuyProduct}
+          >
+            Comprar Agora
+          </button>
+        </ProductDetails>
+      </Container>
+    </>
   )
 }
 
